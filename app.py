@@ -11,30 +11,28 @@ passphrase = "Faisal"
 
 # Load the encrypted OpenSSH private key using the passphrase
 available_servers = [
-    {
-        "ssh_hostname": '68.183.89.111',
-        "ssh_port": 22,  # Default SSH port
-        "ssh_username": 'root',
-        "label":"India/Singapore"
-    },
-    {
+        {
+            "ssh_hostname": '68.183.89.111',
+            "ssh_port": 22,  # Default SSH port
+            "ssh_username": 'root',
+            "label":"India/Singapore",
+            "server_ip":"68.183.89.111:51820",
+            "server_public_key":"YaXOX3+2elhMVGmAubc77v4MslEMMIg6d3mpwSgITUM="
+        },
+        {
             "ssh_hostname": '104.236.70.46',
             "ssh_port": 22,  # Default SSH port
             "ssh_username": 'root',
-            "label":"U.S/New York"
-    },
+            "label":"U.S/New York",
+            "server_public_key":"YaXOX3+2elhMVGmAubc77v4MslEMMIg6d3mpwSgITUM="
+        },
     ]
 
-# SSH Configuration Parameters
-ssh_hostname = '68.183.89.111'
-ssh_port = 22  # Default SSH port
-ssh_username = 'root'
+
 
 # WireGuard Configuration Parameters
 wg_interface = 'wg0'
 client_ip = '10.66.66.3'  # Example client IP
-server_public_key = 'YaXOX3+2elhMVGmAubc77v4MslEMMIg6d3mpwSgITUM='
-server_ip = '68.183.89.111:51820'  # Server IP and port
 dns = '1.1.1.1'  # DNS server
 
 # Paths
@@ -69,8 +67,11 @@ def generate_keys_via_ssh(ssh_client):
     pub_key = stdout.read().decode().strip()
     return priv_key, pub_key
 
-def create_client_config(ssh_client, client_ip, priv_key, pub_key, preshared_key):
+def create_client_config(ssh_client, client_ip, priv_key, pub_key, preshared_key, server):
     """Create a WireGuard configuration file and download it."""
+
+    server_ip = available_servers[int(server)]['server_ip']
+    server_public_key = available_servers[int(server)]['server_public_key']
     client_config = f"""
 [Interface]
 PrivateKey = {priv_key}
@@ -183,7 +184,7 @@ def main(server):
         print("Keys generated.")
         preshared_key  = generate_preshared_key_via_ssh(ssh_client)
         print("Preshared key generated.")
-        local_config_path, remote_config_path, res_json = create_client_config(ssh_client, client_ip, priv_key, pub_key, preshared_key)
+        local_config_path, remote_config_path, res_json = create_client_config(ssh_client, client_ip, priv_key, pub_key, preshared_key,server)
         print("Client configuration created.")
         update_server_config(ssh_client, pub_key, client_ip)
         print("Server configuration updated.")
@@ -229,7 +230,6 @@ def create_client():
 
         print(query_parameters)
         server = query_parameters.get('server')
-        return "done"
 
 
         done,res = main(server)
@@ -238,7 +238,3 @@ def create_client():
             return jsonify(res), 200
         else:
             return json({}), 400
-
-# if __name__ == "__main__":
-#     port = int(8000)  # Default to 5000 if PORT not set
-#     app.run(host='0.0.0.0', port=port)
